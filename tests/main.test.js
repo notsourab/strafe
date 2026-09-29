@@ -6,7 +6,6 @@ const tauri = vi.hoisted(() => ({
   appWindow: {
     setSize: vi.fn(),
     center: vi.fn(),
-    hide: vi.fn(),
     listen: vi.fn(),
   },
 }));
@@ -68,7 +67,6 @@ describe("app request lifecycle", () => {
     tauri.invoke.mockReset();
     tauri.appWindow.setSize.mockReset().mockResolvedValue(undefined);
     tauri.appWindow.center.mockReset().mockResolvedValue(undefined);
-    tauri.appWindow.hide.mockReset().mockResolvedValue(undefined);
     tauri.appWindow.listen.mockReset().mockImplementation((event, handler) => {
       tauri.listeners.set(event, handler);
       return Promise.resolve(() => {});
@@ -372,10 +370,20 @@ describe("app request lifecycle", () => {
     await flush();
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     await flush();
-    expect(tauri.appWindow.hide).toHaveBeenCalledOnce();
+    expect(tauri.invoke).toHaveBeenCalledWith("dismiss_window");
     resize.resolve();
     await flush();
     expect(document.querySelector(".search-input")).not.toBeNull();
+  });
+
+  it("hands focus back through the native dismissal command on Escape", async () => {
+    await loadApp();
+    document.querySelector(".search-input").dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+    );
+    await flush();
+    expect(tauri.invoke).toHaveBeenCalledWith("dismiss_window");
+    expect(document.activeElement).not.toBe(document.querySelector(".search-input"));
   });
 
   it("discards a response arriving while dismissal is pending", async () => {
@@ -383,7 +391,9 @@ describe("app request lifecycle", () => {
     enter(document.querySelector(".search-input"), "old");
     await flush();
     const hide = deferred();
-    tauri.appWindow.hide.mockImplementationOnce(() => hide.promise);
+    tauri.invoke.mockImplementationOnce((command) =>
+      command === "dismiss_window" ? hide.promise : Promise.resolve(undefined)
+    );
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     searchRequests[0].resolve([{ title: "Old", url: "https://old.example", description: "" }]);
     await flush();
@@ -457,7 +467,9 @@ describe("app request lifecycle", () => {
     await resolveArticle(0, "This article is being dismissed. ");
     document.querySelector(".ai-tab").click();
     const hide = deferred();
-    tauri.appWindow.hide.mockImplementationOnce(() => hide.promise);
+    tauri.invoke.mockImplementationOnce((command) =>
+      command === "dismiss_window" ? hide.promise : Promise.resolve(undefined)
+    );
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     const dismissingView = document.getElementById("app").innerHTML;
     if (settlement === "resolve") aiRequests[0].resolve("Dismissed overview");
