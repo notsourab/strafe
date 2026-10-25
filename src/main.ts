@@ -117,7 +117,7 @@ async function showApiKeySetup() {
   });
 }
 
-async function showSearch() {
+async function showSearch(focusInput = true) {
   currentState = "search";
   searchGeneration++; // invalidate any in-flight fetches from previous search
   isSearching = false;
@@ -129,7 +129,7 @@ async function showSearch() {
     onSearch: handleSearch,
     onDismiss: dismissWindow,
   });
-  searchInput.focus();
+  if (focusInput) searchInput.focus();
 }
 
 async function handleSearch(query: string) {
@@ -416,9 +416,9 @@ function applyTheme(theme: string) {
 
 async function dismissWindow() {
   const thisGeneration = ++searchGeneration;
-  await appWindow.hide();
+  await invoke("dismiss_window");
   if (thisGeneration !== searchGeneration) return;
-  void showSearch();
+  void showSearch(false);
 }
 
 init();

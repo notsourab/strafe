@@ -1,6 +1,7 @@
 mod commands;
 mod config;
 mod fetcher;
+mod focus;
 mod search;
 
 use tauri::{
@@ -9,6 +10,14 @@ use tauri::{
     Emitter, Manager,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+
+#[tauri::command]
+fn dismiss_window(
+    window: tauri::WebviewWindow,
+    tracker: tauri::State<'_, focus::FocusTracker>,
+) -> Result<(), String> {
+    tracker.dismiss(&window).map_err(|error| error.to_string())
+}
 
 fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let settings_item = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
@@ -29,6 +38,9 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             "settings" => {
                 if let Some(window) = app.get_webview_window("main") {
+                    if !window.is_visible().unwrap_or(false) {
+                        app.state::<focus::FocusTracker>().remember_frontmost_app();
+                    }
                     let _ = window.emit("show-settings", ());
                     let _ = window.show();
                     let _ = window.set_focus();
@@ -55,8 +67,11 @@ fn setup_shortcut(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 if event.state() == ShortcutState::Pressed {
                     if let Some(window) = app_handle.get_webview_window("main") {
                         if window.is_visible().unwrap_or(false) {
-                            let _ = window.hide();
+                            let _ = app_handle.state::<focus::FocusTracker>().dismiss(&window);
                         } else {
+                            app_handle
+                                .state::<focus::FocusTracker>()
+                                .remember_frontmost_app();
                             let _ = window.show();
                             let _ = window.set_focus();
                             let _ = window.emit("window-shown", ());
@@ -81,6 +96,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            app.manage(focus::FocusTracker::default());
             setup_tray(app)?;
             setup_shortcut(app)?;
             Ok(())
@@ -91,6 +107,7 @@ pub fn run() {
             commands::fetch_single_page,
             commands::get_config,
             commands::save_config,
+            dismiss_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
