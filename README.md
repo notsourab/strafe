@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ubernerd117/strafe/releases/latest">
-    <img src="https://img.shields.io/github/v/release/ubernerd117/strafe?style=flat-square&color=c3f5a5" alt="Release">
+  <a href="https://github.com/notsourab/strafe/releases/latest">
+    <img src="https://img.shields.io/github/v/release/notsourab/strafe?style=flat-square&color=c3f5a5" alt="Release">
   </a>
   <img src="https://img.shields.io/badge/platform-macOS-333?style=flat-square" alt="macOS">
-  <img src="https://img.shields.io/github/license/ubernerd117/strafe?style=flat-square&color=333" alt="License">
+  <img src="https://img.shields.io/github/license/notsourab/strafe?style=flat-square&color=333" alt="License">
 </p>
 
 ---
@@ -27,7 +27,7 @@
 
 ## Download
 
-**[Download Strafe for macOS (Apple Silicon)](https://github.com/ubernerd117/strafe/releases/latest)**
+**[Download Strafe for macOS (Apple Silicon)](https://github.com/notsourab/strafe/releases/latest)**
 
 > Requires macOS 10.15+. On first launch, grant Accessibility permission for the global shortcut.
 
@@ -94,7 +94,7 @@ You can read the first result while Strafe fetches the remaining pages in parall
 
 ```bash
 # Prerequisites: Rust, Node.js
-git clone https://github.com/ubernerd117/strafe.git
+git clone https://github.com/notsourab/strafe.git
 cd strafe
 npm install
 npm run tauri build
